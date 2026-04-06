@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Flow</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121212">
+
+<style>
+body { margin:0; font-family: Arial; background:#121212; color:#fff; }
+
+header {
+  padding:15px;
+  background:#1e1e1e;
+  text-align:center;
+  border-bottom:1px solid #333;
+}
+header h1 { margin:0; font-size:20px; color:#00aaff; }
+header p { margin:2px 0 0; font-size:12px; color:#888; }
+
+.totals { display:flex; gap:8px; padding:10px; }
+.box {
+  flex:1;
+  background:#222;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+}
+.box h3 { margin:5px 0; color:#00aaff; }
+
+.input { padding:10px; }
+input, select {
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  box-sizing:border-box;
+  background:#222;
+  border:1px solid #333;
+  color:#fff;
+  border-radius:8px;
+  font-size:16px;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  background:#ff8800;
+  border:none;
+  border-radius:8px;
+  color:#fff;
+  font-weight:bold;
+}
+
+.list { height:55vh; overflow:auto; padding:10px; }
+
+.date {
+  background:#1e1e1e;
+  margin-bottom:10px;
+  border-radius:10px;
+}
+.date-head {
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  cursor:pointer;
+}
+.entries { display:none; }
+
+.entry {
+  padding:10px;
+  border-top:1px solid #333;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.left { max-width:70%; }
+
+.amount {
+  background:#2a2a2a;
+  padding:6px 10px;
+  border-radius:8px;
+  font-weight:500;
+  color:#ffaa33;
+}
+
+.tag {
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:6px;
+  font-size:11px;
+  margin-top:4px;
+}
+
+.cash { background:#444; }
+.upi { background:#0066ff; }
+.cc { background:#aa00ff; }
+.ccupi { background:#ff5500; }
+
+.footer {
+  text-align:center;
+  font-size:11px;
+  color:#777;
+  padding:6px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>💰 Expense Flow</h1>
+  <p>Smart Expense Tracker</p>
+</header>
+
+<div class="totals">
+  <div class="box">
+    <div>Today</div>
+    <h3 id="today">₹0</h3>
+  </div>
+  <div class="box">
+    <div>Monthly</div>
+    <h3 id="month">₹0</h3>
+  </div>
+</div>
+
+<div class="input">
+  <input type="number" id="amt" placeholder="Enter Amount">
+  <input type="text" id="remark" placeholder="Remark">
+  <select id="mode">
+    <option>Cash</option>
+    <option>UPI</option>
+    <option>Credit Card Online</option>
+    <option>Credit Card UPI</option>
+  </select>
+  <button onclick="add()">Add Expense</button>
+</div>
+
+<div class="list" id="list"></div>
+
+<div class="footer">By Saurabh Rai</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('exp')) || {};
+
+function formatDate(d){
+  let day = String(d.getDate()).padStart(2,'0');
+  let month = String(d.getMonth()+1).padStart(2,'0');
+  let year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+function todayStr(){ return formatDate(new Date()); }
+
+function add(){
+  let a = amt.value;
+  if(!a) return;
+
+  let d = todayStr();
+  if(!data[d]) data[d]=[];
+
+  data[d].push({
+    amt:+a,
+    remark:remark.value,
+    mode:mode.value
+  });
+
+  localStorage.setItem('exp', JSON.stringify(data));
+
+  amt.value='';
+  remark.value='';
+
+  render();
+}
+
+function render(){
+  let list = document.getElementById('list');
+  list.innerHTML='';
+
+  let dates = Object.keys(data).sort((a,b)=>{
+    let [da,ma,ya]=a.split('-');
+    let [db,mb,yb]=b.split('-');
+    return new Date(yb,mb-1,db) - new Date(ya,ma-1,da);
+  });
+
+  let monthTotal=0, todayTotal=0;
+
+  dates.forEach((d,i)=>{
+    let wrap = document.createElement('div');
+    wrap.className='date';
+
+    let head = document.createElement('div');
+    head.className='date-head';
+
+    let total = data[d].reduce((s,e)=>s+e.amt,0);
+    monthTotal += total;
+    if(d===todayStr()) todayTotal = total;
+
+    head.innerHTML = `${d} <span style='color:#ffaa33'>₹${total}</span>`;
+
+    let entries = document.createElement('div');
+    entries.className='entries';
+    if(i===0) entries.style.display='block';
+
+    head.onclick = ()=>{
+      entries.style.display = entries.style.display==='block'?'none':'block';
+    };
+
+    [...data[d]].reverse().forEach(e=>{
+      let div = document.createElement('div');
+      div.className='entry';
+
+      let tagClass='';
+      if(e.mode==='Cash') tagClass='cash';
+      else if(e.mode==='UPI') tagClass='upi';
+      else if(e.mode==='Credit Card Online') tagClass='cc';
+      else tagClass='ccupi';
+
+      div.innerHTML = `
+        <div class="left">
+          <div>${e.remark || 'No remark'}</div>
+          <div class="tag ${tagClass}">${e.mode}</div>
+        </div>
+        <div class="amount">₹${e.amt}</div>
+      `;
+
+      entries.appendChild(div);
+    });
+
+    wrap.appendChild(head);
+    wrap.appendChild(entries);
+    list.appendChild(wrap);
+  });
+
+  document.getElementById('month').innerText = '₹'+monthTotal;
+  document.getElementById('today').innerText = '₹'+todayTotal;
+}
+
+render();
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+
+</body>
+</html>
