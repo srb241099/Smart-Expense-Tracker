@@ -73,7 +73,18 @@ input, select {
   height: 48px;
   box-sizing: border-box;
 }
+input[type="date"]::before {
+  content: attr(data-placeholder);
+  color: #888;
+  position: absolute;
+  pointer-events: none;
+}
 
+input[type="date"]:focus::before,
+input[type="date"]:valid::before {
+  display: none;
+}
+  
 input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
@@ -186,7 +197,7 @@ button {
   <div class="row">
     <div class="col">
       <label>Select Date</label>
-      <input type="date" id="date" placeholder="Select Date">
+      <input type="date" id="date" data-placeholder="Select Date" required>
     </div>
     <div class="col">
       <label>Amount</label>
