@@ -90,10 +90,23 @@ input, select {
   height: 48px;           
   box-sizing: border-box;
 }
-/* date icon white */
+  input[type="date"] {
+  height: 48px;
+  box-sizing: border-box;
+  -webkit-appearance: none;  /* ← iOS Safari fix */
+  appearance: none;
+  color: #fff;               /* ← text color force karo */
+}
+
+/* Placeholder color fix for mobile */
+input[type="date"]::-webkit-datetime-edit {
+  color: #888;
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity:0.8;
+  filter: invert(1);         /* ← dark bg pe icon white ho jayega */
+  opacity: 0.6;
+  cursor: pointer;
 }
 /* side by side row */
 .row {
