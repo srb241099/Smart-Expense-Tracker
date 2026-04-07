@@ -88,18 +88,17 @@ input, select {
   border-radius:8px;
   font-size:16px;
 }
+input[type="date"]:invalid {
+  color: #777;
+}
 
+input[type="date"]:valid {
+  color: #fff;
+}
 /* date icon white */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   opacity:0.8;
-}
-input[type="date"]:invalid {
-  color: #777;  /* grey when empty */
-}
-
-input[type="date"]:valid {
-  color: #fff;  /* white when selected */
 }
 /* side by side row */
 .row {
@@ -208,7 +207,7 @@ button {
   <div class="row">
     <div class="col">
       <label>Select Date</label>
-      <input type="date" id="date">
+      <input type="date" id="date" placeholder="Select Date" required>
     </div>
 
     <div class="col">
