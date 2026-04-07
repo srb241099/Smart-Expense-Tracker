@@ -77,8 +77,13 @@ header p { margin:2px 0 0; font-size:12px; color:#888; }
 }
 .box h3 { margin:5px 0; color:#00aaff; }
 
+./* 🔥 IMPORTANT FIX */
+* {
+  box-sizing: border-box;
+}
+
 .input {
-  padding:10px 12px; /* 🔥 left-right space */
+  padding:12px;
 }
 
 input, select {
@@ -92,7 +97,6 @@ input, select {
   font-size:16px;
   display:block;
 }
-
 button {
   width:100%;
   padding:12px;
