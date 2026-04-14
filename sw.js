@@ -1,4 +1,4 @@
-const CACHE = 'expense-flow-v1';
+const CACHE = 'expense-flow-v1.1';
 const FILES = ['./', './index.html'];
 
 self.addEventListener('install', e => {
