@@ -36,9 +36,20 @@ body { margin:0; font-family:Arial; background:#121212; color:#fff; }
 header {
   padding:15px; background:#1e1e1e;
   text-align:center; border-bottom:1px solid #333;
+  position:relative;
 }
 header h1 { margin:0; color:#00aaff; font-size:20px; }
 header p { margin:2px 0 0; font-size:12px; color:#888; }
+
+.dl-btn {
+  position:absolute; right:12px; top:50%;
+  transform:translateY(-50%);
+  background:#1e1e1e; border:1px solid #333;
+  border-radius:8px; color:#fff;
+  width:36px; height:36px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:18px;
+}
 
 .tabs {
   display:flex; background:#1e1e1e;
@@ -58,31 +69,6 @@ header p { margin:2px 0 0; font-size:12px; color:#888; }
 .totals { display:flex; gap:8px; padding:10px; }
 .box { flex:1; background:#222; padding:10px; border-radius:10px; text-align:center; }
 .box h3 { margin:5px 0; color:#00aaff; }
-
-.summary { display:flex; gap:8px; padding:0 10px 10px; }
-.sum-box {
-  flex:1; background:#1a1a2e;
-  padding:10px; border-radius:10px;
-  text-align:center; border:1px solid #333;
-}
-.sum-box .label { font-size:11px; color:#888; }
-.sum-box .val { font-size:16px; color:#aa00ff; font-weight:bold; margin-top:4px; }
-
-.export-bar {
-  display:flex; gap:8px;
-  padding:0 12px 12px;
-}
-.exp-btn {
-  flex:1; padding:10px;
-  border:1px solid #333;
-  border-radius:8px;
-  background:#1e1e1e;
-  color:#00aaff;
-  font-size:13px;
-  cursor:pointer;
-  text-align:center;
-}
-.exp-btn.cc { color:#aa00ff; border-color:#aa00ff33; }
 
 .input { padding:12px; }
 label { font-size:12px; color:#888; display:block; margin-top:5px; }
@@ -114,9 +100,9 @@ button {
   border-radius:8px; color:#fff;
   font-weight:bold; margin-top:8px; font-size:16px;
 }
-button.cc-btn { background:#aa00ff; }
+button.cc-btn { background:#ff8800; }
 
-.list { height:45vh; overflow:auto; padding:10px; }
+.list { height:48vh; overflow:auto; padding:10px; }
 
 .date-group { background:#1e1e1e; margin-bottom:10px; border-radius:10px; }
 .date-head {
@@ -130,7 +116,6 @@ button.cc-btn { background:#aa00ff; }
 }
 .left { max-width:70%; }
 .amount { background:#2a2a2a; padding:6px 10px; border-radius:8px; color:#ffaa33; }
-.amount.cc { color:#cc66ff; }
 .tag {
   display:inline-block; padding:2px 6px;
   border-radius:6px; font-size:11px; margin-top:4px;
@@ -155,6 +140,7 @@ button.cc-btn { background:#aa00ff; }
 <header>
   <h1>Expense Flow</h1>
   <p>Smart Expense Tracker</p>
+  <div class="dl-btn" id="dl-btn" onclick="exportCSV()">⬇</div>
 </header>
 
 <div class="tabs">
@@ -173,10 +159,6 @@ button.cc-btn { background:#aa00ff; }
       <div>Monthly</div>
       <h3 id="month">₹0</h3>
     </div>
-  </div>
-
-  <div class="export-bar">
-    <div class="exp-btn" onclick="exportCSV('spent')">⬇ Export Spent CSV</div>
   </div>
 
   <div class="input">
@@ -205,19 +187,15 @@ button.cc-btn { background:#aa00ff; }
 
 <!-- CREDIT CARD SECTION -->
 <div class="section" id="sec-cc">
-  <div class="summary">
-    <div class="sum-box">
-      <div class="label">This Month CC</div>
-      <div class="val" id="cc-month">₹0</div>
+  <div class="totals">
+    <div class="box">
+      <div>Today</div>
+      <h3 id="cc-today">₹0</h3>
     </div>
-    <div class="sum-box">
-      <div class="label">Today CC</div>
-      <div class="val" id="cc-today">₹0</div>
+    <div class="box">
+      <div>Monthly</div>
+      <h3 id="cc-month">₹0</h3>
     </div>
-  </div>
-
-  <div class="export-bar">
-    <div class="exp-btn cc" onclick="exportCSV('cc')">⬇ Export CC CSV</div>
   </div>
 
   <div class="input">
@@ -249,6 +227,7 @@ button.cc-btn { background:#aa00ff; }
 <script>
 let spentData = {};
 let ccData = {};
+let activeTab = 'spent';
 
 function migrateOldData() {
   let old = JSON.parse(localStorage.getItem('exp')) || {};
@@ -305,6 +284,7 @@ function isCurrentMonth(dateStr) {
 }
 
 function switchTab(tab) {
+  activeTab = tab;
   document.querySelectorAll('.tab').forEach((t,i) => {
     t.classList.toggle('active', (i===0 && tab==='spent') || (i===1 && tab==='cc'));
   });
@@ -312,31 +292,26 @@ function switchTab(tab) {
   document.getElementById('sec-cc').classList.toggle('active', tab==='cc');
 }
 
-function exportCSV(type) {
-  let data = type === 'spent' ? spentData : ccData;
+function exportCSV() {
+  let data = activeTab === 'spent' ? spentData : ccData;
   let rows = ['Date,Amount,Remark,Payment Mode'];
-
   let dates = Object.keys(data).sort((a,b) => {
     let [da,ma,ya] = a.split('-');
     let [db,mb,yb] = b.split('-');
     return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
   });
-
   dates.forEach(date => {
     data[date].forEach(entry => {
-      let remark = (entry.remark || '').replace(/,/g, ' ');
+      let remark = (entry.remark || '').replace(/,/g,' ');
       rows.push(`${date},${entry.amt},${remark},${entry.mode}`);
     });
   });
-
   let csv = rows.join('\n');
-  let blob = new Blob([csv], { type: 'text/csv' });
+  let blob = new Blob([csv], { type:'text/csv' });
   let url = URL.createObjectURL(blob);
   let a = document.createElement('a');
-  let now = new Date();
-  let filename = `expense-flow-${type}-${formatDate(now)}.csv`;
   a.href = url;
-  a.download = filename;
+  a.download = `expense-flow-${activeTab}-${formatDate(new Date())}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -375,7 +350,7 @@ function addCC() {
   renderCC();
 }
 
-function renderList(data, listId, amtClass) {
+function renderList(data, listId, color) {
   let list = document.getElementById(listId);
   list.innerHTML = '';
   let dates = Object.keys(data).sort((a,b) => {
@@ -389,7 +364,7 @@ function renderList(data, listId, amtClass) {
     let head = document.createElement('div');
     head.className = 'date-head';
     let total = data[d].reduce((s,e) => s+e.amt, 0);
-    head.innerHTML = `${d} <span style="color:${amtClass==='cc'?'#cc66ff':'#ffaa33'}">₹${total}</span>`;
+    head.innerHTML = `${d} <span style="color:${color}">₹${total}</span>`;
     let entries = document.createElement('div');
     entries.className = 'entries';
     if(i===0) entries.style.display = 'block';
@@ -409,7 +384,7 @@ function renderList(data, listId, amtClass) {
           <div>${e.remark || 'No remark'}</div>
           <div class="tag ${tagClass}">${e.mode}</div>
         </div>
-        <div class="amount ${amtClass}">₹${e.amt}</div>
+        <div class="amount" style="color:${color}">₹${e.amt}</div>
       `;
       entries.appendChild(div);
     });
@@ -420,7 +395,7 @@ function renderList(data, listId, amtClass) {
 }
 
 function renderSpent() {
-  renderList(spentData, 'list-spent', 'spent');
+  renderList(spentData, 'list-spent', '#ffaa33');
   let monthTotal = 0, todayTotal = 0;
   Object.keys(spentData).forEach(d => {
     let total = spentData[d].reduce((s,e) => s+e.amt, 0);
@@ -432,7 +407,7 @@ function renderSpent() {
 }
 
 function renderCC() {
-  renderList(ccData, 'list-cc', 'cc');
+  renderList(ccData, 'list-cc', '#cc66ff');
   let monthTotal = 0, todayTotal = 0;
   Object.keys(ccData).forEach(d => {
     let total = ccData[d].reduce((s,e) => s+e.amt, 0);
