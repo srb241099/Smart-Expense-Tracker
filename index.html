@@ -100,7 +100,6 @@ button {
   border-radius:8px; color:#fff;
   font-weight:bold; margin-top:8px; font-size:16px;
 }
-button.cc-btn { background:#ff8800; }
 
 .list { height:48vh; overflow:auto; padding:10px; }
 
@@ -115,7 +114,7 @@ button.cc-btn { background:#ff8800; }
   display:flex; justify-content:space-between; align-items:center;
 }
 .left { max-width:70%; }
-.amount { background:#2a2a2a; padding:6px 10px; border-radius:8px; color:#ffaa33; }
+.amount { background:#2a2a2a; padding:6px 10px; border-radius:8px; }
 .tag {
   display:inline-block; padding:2px 6px;
   border-radius:6px; font-size:11px; margin-top:4px;
@@ -140,7 +139,7 @@ button.cc-btn { background:#ff8800; }
 <header>
   <h1>Expense Flow</h1>
   <p>Smart Expense Tracker</p>
-  <div class="dl-btn" id="dl-btn" onclick="exportCSV()">⬇</div>
+  <div class="dl-btn" onclick="exportCSV()">⬇</div>
 </header>
 
 <div class="tabs">
@@ -148,19 +147,12 @@ button.cc-btn { background:#ff8800; }
   <div class="tab" onclick="switchTab('cc')">Credit Card</div>
 </div>
 
-<!-- SPENT SECTION -->
+<!-- SPENT -->
 <div class="section active" id="sec-spent">
   <div class="totals">
-    <div class="box">
-      <div>Today</div>
-      <h3 id="today">₹0</h3>
-    </div>
-    <div class="box">
-      <div>Monthly</div>
-      <h3 id="month">₹0</h3>
-    </div>
+    <div class="box"><div>Today</div><h3 id="today">₹0</h3></div>
+    <div class="box"><div>Monthly</div><h3 id="month">₹0</h3></div>
   </div>
-
   <div class="input">
     <div class="row">
       <div class="col">
@@ -181,23 +173,15 @@ button.cc-btn { background:#ff8800; }
     </select>
     <button onclick="addSpent()">Add Expense</button>
   </div>
-
   <div class="list" id="list-spent"></div>
 </div>
 
-<!-- CREDIT CARD SECTION -->
+<!-- CREDIT CARD -->
 <div class="section" id="sec-cc">
   <div class="totals">
-    <div class="box">
-      <div>Today</div>
-      <h3 id="cc-today">₹0</h3>
-    </div>
-    <div class="box">
-      <div>Monthly</div>
-      <h3 id="cc-month">₹0</h3>
-    </div>
+    <div class="box"><div>Today</div><h3 id="cc-today">₹0</h3></div>
+    <div class="box"><div>Monthly</div><h3 id="cc-month">₹0</h3></div>
   </div>
-
   <div class="input">
     <div class="row">
       <div class="col">
@@ -216,9 +200,8 @@ button.cc-btn { background:#ff8800; }
       <option>Credit Card</option>
       <option>Credit Card UPI</option>
     </select>
-    <button class="cc-btn" onclick="addCC()">Add CC Expense</button>
+    <button onclick="addCC()">Add CC Expense</button>
   </div>
-
   <div class="list" id="list-cc"></div>
 </div>
 
@@ -258,11 +241,12 @@ function load() {
   ccData = JSON.parse(localStorage.getItem('exp-cc')) || {};
 }
 
+function fmt(n) { return n.toFixed(2); }
+
 function formatDate(d) {
-  let day = String(d.getDate()).padStart(2,'0');
-  let month = String(d.getMonth()+1).padStart(2,'0');
-  let year = d.getFullYear();
-  return `${day}-${month}-${year}`;
+  return String(d.getDate()).padStart(2,'0') + '-' +
+         String(d.getMonth()+1).padStart(2,'0') + '-' +
+         d.getFullYear();
 }
 
 function convertInputDate(val) {
@@ -275,7 +259,7 @@ function todayStr() { return formatDate(new Date()); }
 
 function currentMonthStr() {
   let now = new Date();
-  return `${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;
+  return String(now.getMonth()+1).padStart(2,'0') + '-' + now.getFullYear();
 }
 
 function isCurrentMonth(dateStr) {
@@ -306,8 +290,7 @@ function exportCSV() {
       rows.push(`${date},${entry.amt},${remark},${entry.mode}`);
     });
   });
-  let csv = rows.join('\n');
-  let blob = new Blob([csv], { type:'text/csv' });
+  let blob = new Blob([rows.join('\n')], { type:'text/csv' });
   let url = URL.createObjectURL(blob);
   let a = document.createElement('a');
   a.href = url;
@@ -364,7 +347,7 @@ function renderList(data, listId, color) {
     let head = document.createElement('div');
     head.className = 'date-head';
     let total = data[d].reduce((s,e) => s+e.amt, 0);
-    head.innerHTML = `${d} <span style="color:${color}">₹${total}</span>`;
+    head.innerHTML = `${d} <span style="color:${color}">₹${fmt(total)}</span>`;
     let entries = document.createElement('div');
     entries.className = 'entries';
     if(i===0) entries.style.display = 'block';
@@ -374,17 +357,13 @@ function renderList(data, listId, color) {
     [...data[d]].reverse().forEach(e => {
       let div = document.createElement('div');
       div.className = 'entry';
-      let tagClass = '';
-      if(e.mode==='Cash') tagClass='cash';
-      else if(e.mode==='UPI') tagClass='upi';
-      else if(e.mode==='Credit Card') tagClass='cc-tag';
-      else tagClass='ccupi';
+      let tagClass = e.mode==='Cash' ? 'cash' : e.mode==='UPI' ? 'upi' : e.mode==='Credit Card' ? 'cc-tag' : 'ccupi';
       div.innerHTML = `
         <div class="left">
           <div>${e.remark || 'No remark'}</div>
           <div class="tag ${tagClass}">${e.mode}</div>
         </div>
-        <div class="amount" style="color:${color}">₹${e.amt}</div>
+        <div class="amount" style="color:${color}">₹${fmt(e.amt)}</div>
       `;
       entries.appendChild(div);
     });
@@ -402,8 +381,8 @@ function renderSpent() {
     if(isCurrentMonth(d)) monthTotal += total;
     if(d === todayStr()) todayTotal = total;
   });
-  document.getElementById('month').innerText = '₹'+monthTotal;
-  document.getElementById('today').innerText = '₹'+todayTotal;
+  document.getElementById('month').innerText = '₹' + fmt(monthTotal);
+  document.getElementById('today').innerText = '₹' + fmt(todayTotal);
 }
 
 function renderCC() {
@@ -414,8 +393,8 @@ function renderCC() {
     if(isCurrentMonth(d)) monthTotal += total;
     if(d === todayStr()) todayTotal = total;
   });
-  document.getElementById('cc-month').innerText = '₹'+monthTotal;
-  document.getElementById('cc-today').innerText = '₹'+todayTotal;
+  document.getElementById('cc-month').innerText = '₹' + fmt(monthTotal);
+  document.getElementById('cc-today').innerText = '₹' + fmt(todayTotal);
 }
 
 load();
